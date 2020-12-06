@@ -27,7 +27,7 @@ export default function App() {
         dispatch(logout());
       }
     });
-  }, []);
+  }, [dispatch]);
 
   return <div className="app">{user ? <Imessage /> : <Login />}</div>;
 }

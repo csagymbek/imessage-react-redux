@@ -2,15 +2,19 @@ import { IconButton } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import "../styles/Chat.css";
 import MicNoneIcon from "@material-ui/icons/MicNone";
-import Message from "./Message";
+import { Message } from "./Message";
 import { useSelector } from "react-redux";
 import { selectChatId, selectChatName } from "../features/chatSlice";
 import { database } from "../configs/firebase";
+import firebase from "firebase";
+import { selectUser } from "../features/userSlice";
+import FlipMove from "react-flip-move";
 
 export default function Chat() {
   const [input, setInput] = useState("");
   const chatName = useSelector(selectChatName);
   const chatId = useSelector(selectChatId);
+  const user = useSelector(selectUser);
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -19,7 +23,7 @@ export default function Chat() {
         .collection("chats")
         .doc(chatId)
         .collection("messages")
-        .orderBy("timestamp", "desc")
+        .orderBy("timestamp", "asc")
         .onSnapshot((snapshot) =>
           setMessages(
             snapshot.docs.map((doc) => ({
@@ -32,7 +36,15 @@ export default function Chat() {
   }, [chatId]);
 
   const sendMessage = (e) => {
-    e.ppreventDefault();
+    e.preventDefault();
+    database.collection("chats").doc(chatId).collection("messages").add({
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      message: input,
+      uid: user.uid,
+      photo: user.photo,
+      email: user.email,
+      displayName: user.displayName,
+    });
     setInput("");
   };
 
@@ -45,9 +57,11 @@ export default function Chat() {
         <strong>Details</strong>
       </div>
       <div className="chat__messages">
-        {messages.map(({ id, data }) => (
-          <Message key={id} contents={data} />
-        ))}
+        <FlipMove>
+          {messages.map(({ id, data }) => (
+            <Message key={id} contents={data} />
+          ))}
+        </FlipMove>
       </div>
       <div className="chat__input">
         <form action="">
